@@ -3,7 +3,7 @@
     ViewBag.Title = "Index";
 }
 
-<div class="jumbotron">
+<div class="container" style="width:100%" >
     <table id="grid"></table>
     <div id="pager"></div>
     @*<button id="ctlAddRow">Add row</button>*@
@@ -131,10 +131,12 @@
         'cellEdit': true,
         'cellsubmit': 'clientArray',
         editurl: 'clientArray',
-        multiselect: true
+        multiselect: true,
+        height: 'auto',
+        width:'auto'
     })        .jqGrid('navGrid', '#pager', { edit: false, add: false, del: false, search: false })        .navButtonAdd('#pager', {
-            caption: "Add",
-            buttonicon: "ui-icon-add",
+            caption: "",
+            buttonicon: "ui-icon-plusthick",
             onClickButton: function () {
                 AddRow();
             },
@@ -152,4 +154,5 @@
         }
         $("#grid").jqGrid('addRowData', newRowId, row);
     }
+
 </script>
