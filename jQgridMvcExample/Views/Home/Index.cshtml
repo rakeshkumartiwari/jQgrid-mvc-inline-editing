@@ -1,0 +1,155 @@
+﻿
+@{
+    ViewBag.Title = "Index";
+}
+
+<div class="jumbotron">
+    <table id="grid"></table>
+    <div id="pager"></div>
+    @*<button id="ctlAddRow">Add row</button>*@
+</div>
+
+
+<script>
+
+    //var mydata = [{
+    //    name: "",
+    //    country: "",
+    //    continent: "",
+    //    stage: "1"
+    //}, {
+    //    name: "",
+    //    country: "",
+    //    continent: "",
+    //    stage: "2"
+    //}, {
+    //    name: "",
+    //    country: "",
+    //    continent: "",
+    //    stage: ""
+    //}, {
+    //    name: "",
+    //    country: "",
+    //    continent: "",
+    //    stage: ""
+    //}],
+        grid = $("#grid"),
+        myDelOptions = {
+            // because I use "local" data I don't want to send the changes to the server
+            // so I use "processing:true" setting and delete the row manually in onclickSubmit
+            onclickSubmit: function (rp_ge, rowid) {
+                // we can use onclickSubmit function as "onclick" on "Delete" button
+                alert("The row with rowid=" + rowid + " will be deleted");
+
+                // delete row
+                grid.delRowData(rowid);
+                $("#delmod" + grid[0].id).hide();
+
+                if (grid[0].p.lastpage > 1) {
+                    // reload grid to make the row from the next page visable.
+                    // TODO: deleting the last row from the last page which number is higher as 1
+                    grid.trigger("reloadGrid", [{ page: grid[0].p.page }]);
+                }
+
+                return true;
+            },
+            processing: true
+        };
+    var stages = { '1': 'Initiate', '2': 'Develop' };
+    $("#grid").jqGrid({
+        data:"",// mydata,
+        datatype: "local",
+        colNames: ["Name", "Country", "Continent", "Stage", "Action"],
+        colModel: [{
+            name: 'name',
+            index: 'name',
+            editable: true,
+        }, {
+            name: 'country',
+            index: 'country',
+            editable: true,
+        }, {
+            name: 'continent',
+            index: 'continent',
+            editable: true,
+        },
+        { name: 'stage', index: 'stage', width: 200, editable: true, edittype: "select", formatter: 'select', editoptions: { value: stages } },
+        {
+            name: 'act', index: 'act', width: 55, align: 'center', sortable: false, formatter: 'actions',
+            formatoptions: {
+                keys: true, // we want use [Enter] key to save the row and [Esc] to cancel editing.
+                onEdit: function (rowid) {
+                    alert("in onEdit: rowid=" + rowid + "\nWe don't need return anything");
+                },
+                onSuccess: function (jqXHR) {
+                    // the function will be used as "succesfunc" parameter of editRow function
+                    // (see http://www.trirand.com/jqgridwiki/doku.php?id=wiki:inline_editing#editrow)
+                    alert("in onSuccess used only for remote editing:" +
+                        "\nresponseText=" + jqXHR.responseText +
+                        "\n\nWe can verify the server response and return false in case of" +
+                        " error response. return true confirm that the response is successful");
+                    // we can verify the server response and interpret it do as an error
+                    // in the case we should return false. In the case onError will be called
+                    return true;
+                },
+                onError: function (rowid, jqXHR, textStatus) {
+                    // the function will be used as "errorfunc" parameter of editRow function
+                    // (see http://www.trirand.com/jqgridwiki/doku.php?id=wiki:inline_editing#editrow)
+                    // and saveRow function
+                    // (see http://www.trirand.com/jqgridwiki/doku.php?id=wiki:inline_editing#saverow)
+                    alert("in onError used only for remote editing:" +
+                        "\nresponseText=" + jqXHR.responseText +
+                        "\nstatus=" + jqXHR.status +
+                        "\nstatusText" + jqXHR.statusText +
+                        "\n\nWe don't need return anything");
+                },
+                afterSave: function (rowid) {
+                    //alert("in afterSave (Submit): rowid=" + rowid + "\nWe don't need return anything");
+                    var rowData = $("#grid").jqGrid("getRowData", rowid);
+
+                   // rowData = JSON.stringify(rowData);
+
+                    $.ajax({
+                        type: "POST",
+                        url: "/jQgridMvcExample/Home/AddEducation",
+                        data: rowData,
+                        success: function () { alert(response.text) },
+                        dataType: "json"
+                    });
+                    //$.post("/jQgridMvcExample/AddEducation", rowData).success(function () { alert("saved") }).fail(function () { alert("fail") });
+                },
+                afterRestore: function (rowid) {
+                    alert("in afterRestore (Cancel): rowid=" + rowid + "\nWe don't need return anything");
+                },
+                delOptions: myDelOptions
+            }
+        },
+
+        ],
+        gridview: true,
+        pager: '#pager',
+        'cellEdit': true,
+        'cellsubmit': 'clientArray',
+        editurl: 'clientArray',
+        multiselect: true
+    })        .jqGrid('navGrid', '#pager', { edit: false, add: false, del: false, search: false })        .navButtonAdd('#pager', {
+            caption: "Add",
+            buttonicon: "ui-icon-add",
+            onClickButton: function () {
+                AddRow();
+            },
+            position: "last"
+        });
+
+    $("#ctlAddRow").click(AddRow);
+    function AddRow() {
+        var newRowId = $.jgrid.randId("new");
+        var row = {
+            name: "",
+            country: "",
+            continent: "",
+            stage: "-1"
+        }
+        $("#grid").jqGrid('addRowData', newRowId, row);
+    }
+</script>
